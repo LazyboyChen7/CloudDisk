@@ -7,6 +7,8 @@ import (
 	"os"
 	"fmt"
 	"time"
+	//"strconv"
+	//dblayer "filestore_server/db"
 	"encoding/json"
 	"filestore_server/meta"
 	"filestore_server/util"
@@ -82,6 +84,7 @@ func GetFileMetaHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(data)
 }
 
+// 下载
 func DownloadHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	fsha256 := r.Form.Get("filehash")
@@ -105,6 +108,7 @@ func DownloadHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(data)
 }
 
+// 更新文件元信息
 func FileMetaUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	opType := r.Form.Get("op")
@@ -145,3 +149,24 @@ func FileDelHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 }
+
+// FileQueryHandler : 查询批量的文件元信息
+// func FileQueryHandler(w http.ResponseWriter, r *http.Request) {
+// 	r.ParseForm()
+
+// 	limitCnt, _ := strconv.Atoi(r.Form.Get("limit"))
+// 	username := r.Form.Get("username")
+// 	//fileMetas, _ := meta.GetLastFileMetasDB(limitCnt)
+// 	userFiles, err := dblayer.QueryUserFileMetas(username, limitCnt)
+// 	if err != nil {
+// 		w.WriteHeader(http.StatusInternalServerError)
+// 		return
+// 	}
+
+// 	data, err := json.Marshal(userFiles)
+// 	if err != nil {
+// 		w.WriteHeader(http.StatusInternalServerError)
+// 		return
+// 	}
+// 	w.Write(data)
+// }

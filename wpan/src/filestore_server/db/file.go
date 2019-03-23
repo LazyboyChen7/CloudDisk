@@ -8,9 +8,6 @@ import (
 
 // 文件上传完成，保存meta
 func OnFileUploadFinished(filehash string, filename string, filesize int64, fileaddr string) bool {
-	conn := mydb.DBConn()
-	fmt.Println(conn == nil)
-	
 	stmt, err := mydb.DBConn().Prepare(
 		"insert ignore into tbl_file (`file_sha256`,`file_name`,`file_size`," +
 			"`file_addr`,`status`) values (?,?,?,?,1)")
