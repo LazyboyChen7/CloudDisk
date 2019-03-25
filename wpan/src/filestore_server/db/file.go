@@ -6,6 +6,13 @@ import (
 	"fmt"
 )
 
+type TableFile struct {
+	FileHash string
+	FileName sql.NullString
+	FileSize sql.NullInt64
+	FileAddr sql.NullString
+}
+
 // 文件上传完成，保存meta
 func OnFileUploadFinished(filehash string, filename string, filesize int64, fileaddr string) bool {
 	stmt, err := mydb.DBConn().Prepare(
@@ -31,13 +38,6 @@ func OnFileUploadFinished(filehash string, filename string, filesize int64, file
 	return false
 }
 
-type TableFile struct {
-	FileHash string
-	FileName sql.NullString
-	FileSize sql.NullInt64
-	FileAddr sql.NullString
-}
-
 // 从mysql中获取元信息
 func GetFileMeta(filehash string) (*TableFile, error) {
 	stmt, err := mydb.DBConn().Prepare(
@@ -51,6 +51,7 @@ func GetFileMeta(filehash string) (*TableFile, error) {
 	tfile := TableFile{}
 	err = stmt.QueryRow(filehash).Scan(&tfile.FileHash, &tfile.FileName, &tfile.FileSize, &tfile.FileAddr)
 	if err != nil {
+		fmt.Println("ddd")
 		fmt.Println(err.Error())
 		return nil, err
 	}

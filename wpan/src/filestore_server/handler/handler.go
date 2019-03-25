@@ -7,11 +7,11 @@ import (
 	"os"
 	"fmt"
 	"time"
-	//"strconv"
-	//dblayer "filestore_server/db"
+	"strconv"
 	"encoding/json"
 	"filestore_server/meta"
 	"filestore_server/util"
+	dblayer "filestore_server/db"
 )
 
 // 处理文件上传
@@ -57,11 +57,19 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		//meta.UpdataFileMeta(fileMeta)
 		_ = meta.UpdataFileMetaDB(fileMeta)
 
-		http.Redirect(w, r, "/file/upload/suc", http.StatusFound)
+		r.ParseForm()
+		username := r.Form.Get("username")
+		suc := dblayer.OnUserFileUploadFinished(username, fileMeta.Filesha256, fileMeta.FileName, fileMeta.FileSize)
+		if suc {
+			http.Redirect(w, r, "/static/view/home.html", http.StatusFound)
+		} else {
+			w.Write([]byte("Upload Failed"))
+		}
 	}
 }
 
 func UploadSuccessHandler(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "/static/view/home.html", http.StatusFound)
 	io.WriteString(w, "Upload Finished!")
 }
 
@@ -150,23 +158,70 @@ func FileDelHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// FileQueryHandler : 查询批量的文件元信息
-// func FileQueryHandler(w http.ResponseWriter, r *http.Request) {
-// 	r.ParseForm()
+//FileQueryHandler : 查询批量的文件元信息
+func FileQueryHandler(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	limitCnt, _ := strconv.Atoi(r.Form.Get("limit"))
+	username := r.Form.Get("username")
+	userFiles, err := dblayer.QueryUserFileMetas(username, limitCnt)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
-// 	limitCnt, _ := strconv.Atoi(r.Form.Get("limit"))
-// 	username := r.Form.Get("username")
-// 	//fileMetas, _ := meta.GetLastFileMetasDB(limitCnt)
-// 	userFiles, err := dblayer.QueryUserFileMetas(username, limitCnt)
-// 	if err != nil {
-// 		w.WriteHeader(http.StatusInternalServerError)
-// 		return
-// 	}
+	data, err := json.Marshal(userFiles)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.Write(data)
+}
 
-// 	data, err := json.Marshal(userFiles)
-// 	if err != nil {
-// 		w.WriteHeader(http.StatusInternalServerError)
-// 		return
-// 	}
-// 	w.Write(data)
-// }
+func TryFastUploadHandler(w http.ResponseWriter, r *http.Request) {
+	// 1. 解析请求参数
+	r.ParseForm()
+	username := r.Form.Get("username")
+	filehash := r.Form.Get("filehash")
+	filename := r.Form.Get("filename")
+	filesize,_ := strconv.Atoi(r.Form.Get("filesize"))
+	// 2. 从文件表中查询相同hash的文件记录
+	fileMeta,err := meta.GetFileMetaDB(filehash)
+	if err != nil {
+		resp := util.RespMsg {
+			Code : 1,
+			Msg : "秒传失败，请访问普通上传接口",
+		}
+		w.Write(resp.JSONBytes())
+		return
+		// fmt.Println("ddd")
+		// fmt.Println(err.Error())
+		// w.WriteHeader(http.StatusInternalServerError)
+		// return
+	}
+	// 3. 查不到记录则返回秒传失败
+	if fileMeta.IsEmpty() {
+		resp := util.RespMsg {
+			Code : 1,
+			Msg : "秒传失败，请访问普通上传接口",
+		}
+		w.Write(resp.JSONBytes())
+		return
+	}
+	// 4. 上传过则将文件信息写入用户表，返回成功
+	suc := dblayer.OnUserFileUploadFinished(username, filehash, filename, int64(filesize))
+	if suc {
+		resp := util.RespMsg {
+			Code : 0,
+			Msg : "秒传成功",
+		}
+		w.Write(resp.JSONBytes())
+		return 
+	} else {
+		resp := util.RespMsg{
+			Code : 2,
+			Msg : "秒传失败，稍后再试",
+		}
+		w.Write(resp.JSONBytes())
+		return
+	}
+}

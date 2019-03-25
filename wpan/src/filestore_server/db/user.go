@@ -5,6 +5,15 @@ import (
 	mydb "filestore_server/db/mysql"
 )
 
+type User struct {
+	Username string
+	Email string
+	Phone string
+	SignupAt string
+	LastActive string
+	Status int
+}
+
 // 通过用户名和密码完成user表的注册操作
 func UserSignup(username string, password string, phone string) bool {
 	stmt,err := mydb.DBConn().Prepare("insert ignore into tbl_user(`user_name`,`user_pwd`,`phone`)values(?,?,?)")
@@ -33,18 +42,17 @@ func UserSignin(username string, encpwd string) bool {
 		fmt.Println(err.Error())
 		return false
 	}
-
 	rows,err := stmt.Query(username)
 	if err != nil {
 		fmt.Println(err.Error())
 		return false
-	} else if rows == nil {
+	}
+	pRows := mydb.ParseRows(rows) 
+	 if len(pRows) == 0 {
 		fmt.Println("username not found:" + username)
 		return false
 	}
-
-	pRows := mydb.ParseRows(rows)
-	if len(pRows) > 0 && string(pRows[0]["user_pwd"].([]byte)) == encpwd {
+	if string(pRows[0]["user_pwd"].([]byte)) == encpwd {
 		return true
 	}
 	return false
@@ -65,15 +73,6 @@ func UpdateToken(username string, token string) bool {
 		return false
 	}
 	return true
-}
-
-type User struct {
-	Username string
-	Email string
-	Phone string
-	SignupAt string
-	LastActive string
-	Status int
 }
 
 func GetUserInfo(username string) (User, error) {

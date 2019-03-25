@@ -1,5 +1,3 @@
-html>
-
 <head>
   <script src="http://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
   <!-- 最新版本的 Bootstrap 核心 CSS 文件 -->
@@ -80,10 +78,14 @@ html>
         }
       },
       success: function (body, textStatus, jqXHR) {
-        var resp = JSON.parse(body);
-        localStorage.setItem("token", resp.data.Token)
-        localStorage.setItem("username", resp.data.Username)
-        window.location.href = resp.data.Location;
+        if (body == "FAILED") {
+          alert("用户名或密码不正确")
+        } else {
+          var resp = JSON.parse(body);
+          localStorage.setItem("token", resp.data.Token)
+          localStorage.setItem("username", resp.data.Username)
+          window.location.href = resp.data.Location;
+        }
       }
     });
   }

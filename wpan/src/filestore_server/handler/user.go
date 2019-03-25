@@ -45,11 +45,20 @@ func SignupHandler(w http.ResponseWriter, r *http.Request) {
 
 // 登录接口
 func SigninHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodGet {
+		data,err := ioutil.ReadFile("./static/view/signin.html")
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.Write(data)
+		return
+	}
+
 	r.ParseForm()
 	username := r.Form.Get("username")
 	password := r.Form.Get("password")
 	encPwd := util.Sha256([]byte(password+pwd_salt))
-
 	// 1.校验用户名密码
 	pwdChecked := dblayer.UserSignin(username, encPwd)
 	if !pwdChecked {
@@ -64,7 +73,6 @@ func SigninHandler(w http.ResponseWriter, r *http.Request) {
 		return 
 	}
 	// 3.重定向到首页 
-	//w.Write([]byte("http://"+r.Host+"/static/view/home.html"))
 	resp := util.RespMsg{
 		Code : 0,
 		Msg : "OK",

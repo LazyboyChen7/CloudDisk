@@ -1,6 +1,7 @@
 package meta
 
 import ( 
+	"reflect"
 	mydb "filestore_server/db"
 )
 
@@ -17,6 +18,10 @@ var fileMetas map[string]FileMeta
 
 func init() {
 	fileMetas = make(map[string]FileMeta)
+}
+
+func (f FileMeta) IsEmpty() bool {
+	return reflect.DeepEqual(f, FileMeta{})
 }
 
 // 新增/更新文件元数据 到mysql中

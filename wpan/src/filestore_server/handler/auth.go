@@ -12,7 +12,7 @@ func HTTPInterceptor(h http.HandlerFunc) http.HandlerFunc {
 		username := r.Form.Get("username")
 		token := r.Form.Get("token")
 		if len(username) < 3 || !IsTokenValid(token) {
-			fmt.Println(len(username))
+			fmt.Println("ad  ",len(username))
 			w.WriteHeader(http.StatusForbidden)
 			return
 		}
